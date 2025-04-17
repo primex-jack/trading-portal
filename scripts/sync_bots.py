@@ -5,7 +5,7 @@ import logging
 from datetime import datetime, timezone
 import requests
 import os
-from binance.um_futures import UMFutures  # Using the same Binance client as the bots
+from binance.um_futures import UMFutures  # For Futures API
 
 # Configure logging
 logging.basicConfig(
@@ -19,7 +19,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Script Version
-SCRIPT_VERSION = "1.0.1"  # Updated for dynamic API credentials
+SCRIPT_VERSION = "1.0.2"  # Updated for Futures balance syncing
 
 # Paths
 CENTRAL_DB_PATH = "/var/www/html/trading-portal/storage/central_trades.db"
@@ -39,8 +39,9 @@ BOTS_CONFIG = {
 }
 
 # Sync intervals (in seconds)
-DATA_SYNC_INTERVAL = 10  # Sync trades and settings every 10 seconds
-PL_UPDATE_INTERVAL = 60  # Update Profit/Loss every 60 seconds
+DATA_SYNC_INTERVAL = 10    # Sync trades every 10 seconds
+PL_UPDATE_INTERVAL = 60    # Update Profit/Loss every 60 seconds
+BALANCE_SYNC_INTERVAL = 300  # Sync Futures balance every 5 minutes
 
 def connect_to_db(db_path):
     """Connect to an SQLite database with error handling."""
@@ -322,17 +323,77 @@ def update_profit_loss(central_db, bot_data_list):
         logger.error(f"Error updating Profit/Loss: {e}")
         central_db.rollback()
 
+def sync_exchange_account(central_db, bot_data):
+    """Sync Futures account balance for the given bot to the central database."""
+    bot_id = bot_data['settings']['bot_id']
+    api_key = bot_data['api_key']
+    api_secret = bot_data['api_secret']
+
+    if not api_key or not api_secret:
+        logger.error(f"No API credentials available for {bot_id}")
+        return
+
+    try:
+        # Initialize Futures client
+        futures_client = UMFutures(
+            key=api_key,
+            secret=api_secret,
+            base_url="https://fapi.binance.com"
+        )
+
+        # Fetch Futures balance
+        futures_balance_info = futures_client.balance()
+        logger.debug(f"Raw Futures balance response for {bot_id}: {futures_balance_info}")
+
+        futures_balance = 0.0
+        futures_available = 0.0
+        for balance in futures_balance_info:
+            if balance['asset'] == 'BNFCR':  # Use BNFCR instead of USDT
+                futures_balance = float(balance['balance'])
+                futures_available = float(balance['availableBalance'])
+                break
+
+        # Log the extracted values
+        logger.debug(f"Extracted Futures balance for {bot_id}: balance={futures_balance}, available={futures_available}")
+
+        # Count open trades (from active_trades table)
+        cursor = central_db.cursor()
+        cursor.execute("SELECT COUNT(*) FROM active_trades WHERE bot_id = ?", (bot_id,))
+        open_trades = cursor.fetchone()[0]
+
+        # Update or insert the account details
+        # Set Spot balance and available margin to 0 since we're not fetching them
+        cursor.execute("""
+            INSERT OR REPLACE INTO exchange_accounts (
+                bot_id, balance, available_margin, open_trades, updated_at, futures_balance, futures_margin
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (
+            bot_id, 0.0, 0.0, open_trades,
+            datetime.now(timezone.utc).isoformat(),
+            futures_balance, futures_available
+        ))
+
+        central_db.commit()
+        logger.info(f"Synced exchange account for {bot_id}: futures_balance={futures_balance}, futures_available={futures_available}, open_trades={open_trades}")
+    except Exception as e:
+        logger.error(f"Error syncing exchange account for {bot_id}: {e}")
+        central_db.rollback()
+
 def main():
-    logger.info("Starting bot sync script...")
+    logger.info(f"Starting bot sync script (version {SCRIPT_VERSION})...")
     central_db = connect_to_db(CENTRAL_DB_PATH)
     if not central_db:
-        logger.error("Failed to connect to central database. Exiting.")
+        logger.error("Failed to connect何かcentral database. Exiting.")
         return
 
     last_pl_update = 0
+    last_balance_update = 0
+
     try:
         while True:
-            # Sync data for each bot
+            start_time = time.time()
+
+            # Sync data for each bot (every 10 seconds)
             bot_data_list = []
             for bot_id, bot_config in BOTS_CONFIG.items():
                 logger.debug(f"Syncing data for {bot_id}")
@@ -340,13 +401,23 @@ def main():
                 bot_data_list.append(bot_data)
                 sync_to_central_db(bot_id, bot_data, central_db)
 
-            # Update Profit/Loss every PL_UPDATE_INTERVAL seconds
+            # Update Profit/Loss every PL_UPDATE_INTERVAL seconds (60 seconds)
             current_time = time.time()
             if current_time - last_pl_update >= PL_UPDATE_INTERVAL:
                 update_profit_loss(central_db, bot_data_list)
                 last_pl_update = current_time
 
-            time.sleep(DATA_SYNC_INTERVAL)
+            # Sync exchange account details every BALANCE_SYNC_INTERVAL seconds (5 minutes)
+            if current_time - last_balance_update >= BALANCE_SYNC_INTERVAL:
+                for bot_data in bot_data_list:
+                    sync_exchange_account(central_db, bot_data)
+                last_balance_update = current_time
+
+            # Sleep to maintain the DATA_SYNC_INTERVAL (10 seconds)
+            elapsed_time = time.time() - start_time
+            sleep_time = max(0, DATA_SYNC_INTERVAL - elapsed_time)
+            time.sleep(sleep_time)
+
     except KeyboardInterrupt:
         logger.info("Shutting down sync script...")
     finally:
