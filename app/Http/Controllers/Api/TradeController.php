@@ -1,0 +1,65 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller; // Import the base Controller class
+
+class TradeController extends Controller
+{
+    public function activeTrades(Request $request, $bot)
+    {
+        try {
+            $query = DB::connection('central')
+                ->table('active_trades')
+                ->where('bot_id', $bot)
+                ->select(['bot_id', 'trade_id as id', 'timestamp', 'trading_pair', 'timeframe', 'side', 'entry_price', 'size', 'stop_loss', 'profit_loss', 'order_id', 'stop_loss_order_id'])
+                ->orderBy('id', 'desc');
+
+            $perPage = $request->input('per_page', 10);
+            $trades = $query->paginate($perPage);
+
+            return response()->json($trades, 200, [], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+        } catch (\Exception $e) {
+            \Log::error("Error fetching active trades for $bot: " . $e->getMessage());
+            return response()->json(['error' => 'Failed to fetch active trades: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function tradeHistory(Request $request, $bot)
+    {
+        try {
+            $query = DB::connection('central')
+                ->table('trade_history')
+                ->where('bot_id', $bot)
+                ->select(['bot_id', 'trade_id as id', 'timestamp', 'trading_pair', 'timeframe', 'side', 'entry_price', 'exit_price', 'profit_loss', 'trend', 'order_id', 'stop_loss_order_id'])
+                ->orderBy('id', 'desc');
+
+            $perPage = $request->input('per_page', 10);
+            $trades = $query->paginate($perPage);
+
+            return response()->json($trades, 200, [], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+        } catch (\Exception $e) {
+            \Log::error("Error fetching trade history for $bot: " . $e->getMessage());
+            return response()->json(['error' => 'Failed to fetch trade history: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function overviewActiveTrades(Request $request)
+    {
+        try {
+            $trades = DB::connection('central')
+                ->table('active_trades')
+                ->select(['bot_id', 'trade_id as id', 'timestamp', 'trading_pair', 'timeframe', 'side', 'entry_price', 'size', 'stop_loss', 'profit_loss'])
+                ->orderBy('bot_id', 'asc')
+                ->orderBy('id', 'desc')
+                ->get();
+
+            return response()->json($trades, 200, [], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+        } catch (\Exception $e) {
+            \Log::error("Error fetching active trades for overview: " . $e->getMessage());
+            return response()->json(['error' => 'Failed to fetch active trades: ' . $e->getMessage()], 500);
+        }
+    }
+}

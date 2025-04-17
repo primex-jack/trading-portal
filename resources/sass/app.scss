@@ -1,0 +1,7 @@
+@use 'variables' as *;
+@use 'bootstrap/scss/bootstrap' as *;
+
+// Custom styles (no font import, already in HTML)
+body {
+    font-family: 'Nunito', sans-serif;
+}
