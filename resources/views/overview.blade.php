@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="container">
+    <div class="custom-container">
         <h1 class="mb-4">Trading Overview</h1>
 
         <!-- Bot Accounts Section -->
@@ -24,7 +24,13 @@
                                 <div class="col-6">
                                     <p><strong>Exchange:</strong> Binance</p>
                                     <p><strong>Balance:</strong> <span id="balance-{{ $botId }}">Loading...</span> USDT</p>
-                                    <p><strong>Current Position:</strong> <span id="position-{{ $botId }}">Loading...</span></p>
+                                    <p class="current-position-label"><strong>Current Position:</strong></p>
+                                    <div class="current-position-wrapper">
+                                        <span class="badge position-badge" id="position-{{ $botId }}">Loading...</span>
+                                    </div>
+                                    <p class="position-details">
+                                        <span id="position-details-{{ $botId }}">Loading...</span>
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -78,6 +84,10 @@
             return tradingPair.replace(/USDT$/, '');
         }
 
+        function formatNumber(number) {
+            return Number(number).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
         const botSettings = {};
 
         function fetchBotSettings(botId) {
@@ -121,11 +131,19 @@
                 })
                 .then(data => {
                     const positionEl = document.getElementById(`position-${botId}`);
+                    const detailsEl = document.getElementById(`position-details-${botId}`);
                     if (data.data && data.data.length > 0) {
                         const trade = data.data[0];
-                        positionEl.textContent = `${trade.side} ${trade.trading_pair}`;
+                        const side = trade.side;
+                        const profitLoss = trade.profit_loss;
+                        positionEl.textContent = `${side} ${trade.trading_pair}`;
+                        positionEl.className = `badge position-badge ${side === 'SHORT' ? 'bg-danger' : 'bg-success'}`;
+                        detailsEl.textContent = `Entry: ${formatNumber(trade.entry_price)} | P/L: ${formatNumber(profitLoss)}`;
+                        detailsEl.className = profitLoss >= 0 ? 'profit-positive' : 'profit-negative';
                     } else {
                         positionEl.textContent = 'No Position';
+                        positionEl.className = 'badge position-badge bg-secondary';
+                        detailsEl.textContent = '';
                     }
                 })
                 .catch(error => {
@@ -148,7 +166,7 @@
                     return response.json();
                 })
                 .then(data => {
-                    document.getElementById(`balance-${botId}`).textContent = data.futures_margin.toFixed(2);
+                    document.getElementById(`balance-${botId}`).textContent = formatNumber(data.futures_margin);
                 })
                 .catch(error => {
                     console.error(`Error fetching balance for ${botId}:`, error);
@@ -192,12 +210,12 @@
                                     <td>${getBaseAsset(trade.trading_pair)}</td>
                                     <td>${trade.timeframe}</td>
                                     <td>${trade.side}</td>
-                                    <td>${trade.entry_price.toFixed(2)}</td>
+                                    <td>${formatNumber(trade.entry_price)}</td>
                                     <td>${atrParam}</td>
                                     <td>${Math.round(trade.size)}</td>
-                                    <td>${sizeDollars}</td>
-                                    <td>${trade.stop_loss ? trade.stop_loss.toFixed(2) : 'N/A'}</td>
-                                    <td class="${profitLossClass}">${trade.profit_loss.toFixed(2)}</td>
+                                    <td>${formatNumber(sizeDollars)}</td>
+                                    <td>${trade.stop_loss ? formatNumber(trade.stop_loss) : 'N/A'}</td>
+                                    <td class="${profitLossClass}">${formatNumber(trade.profit_loss)}</td>
                                 </tr>`;
                             tbody.innerHTML += row;
                         });
@@ -228,28 +246,89 @@
 @endpush
 
 <style>
+    .custom-container {
+        max-width: 1600px; /* Wider container for large screens */
+        margin: 0 auto;
+        padding: 0 15px;
+    }
+
     .card-header {
-        background-color: #007bff;
+        background-color: #7c92b3;
         color: white;
         font-weight: 500;
     }
+
     .card {
         border-radius: 10px;
         transition: transform 0.2s;
     }
+
     .card:hover {
         transform: translateY(-5px);
         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2) !important;
     }
+
     .badge.bg-success {
         background-color: #28a745 !important;
     }
+
     .badge.bg-danger {
         background-color: #dc3545 !important;
     }
+
+    .badge.bg-secondary {
+        background-color: #6c757d !important;
+    }
+
     p {
         margin-bottom: 0.5rem;
     }
-    .profit-positive { color: green; }
-    .profit-negative { color: red; }
+
+    .profit-positive { 
+        color: #28a745; 
+    }
+
+    .profit-negative { 
+        color: #dc3545; 
+    }
+
+    .current-position-label {
+        margin-bottom: 0.25rem;
+    }
+
+    .current-position-wrapper {
+        text-align: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .position-badge {
+        font-size: 1.2rem;
+        padding: 0.5rem 1rem;
+        display: inline-block;
+        width: 100%;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .position-badge.bg-success {
+        background-color: #28a745 !important;
+        color: white;
+    }
+
+    .position-badge.bg-danger {
+        background-color: #dc3545 !important;
+        color: white;
+    }
+
+    .position-badge.bg-secondary {
+        background-color: #6c757d !important;
+        color: white;
+    }
+
+    .position-details {
+        text-align: center;
+        font-size: 1rem;
+        font-weight: 500;
+    }
 </style>
