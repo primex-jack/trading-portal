@@ -253,7 +253,7 @@
     }
 
     .card-header {
-        background-color: #7088ad; /* Updated to #7088ad */
+        background-color: #7088ad; /* Ensure #7088ad is applied */
         color: white;
         font-weight: 500;
     }
