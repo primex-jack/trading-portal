@@ -26,7 +26,7 @@ Route::get('/dashboard/{bot}', function ($bot) {
         abort(404);
     }
     return view('dashboard', compact('bots', 'bot'));
-});
+})->name('dashboard');
 
 Route::prefix('api')->group(function () {
     Route::get('{bot}/status', [BotController::class, 'status']);
