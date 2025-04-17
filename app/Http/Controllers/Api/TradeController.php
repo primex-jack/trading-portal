@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Http\Controllers\Controller; // Import the base Controller class
+use App\Http\Controllers\Controller;
 
 class TradeController extends Controller
 {
@@ -65,33 +65,32 @@ class TradeController extends Controller
 
     public function accountDetails(Request $request, $bot)
     {
-    try {
-        \Log::debug("Fetching account details for bot: $bot");
-        $account = DB::connection('central')
-            ->table('exchange_accounts')
-            ->where('bot_id', $bot)
-            ->select(['balance', 'available_margin', 'open_trades', 'updated_at', 'futures_balance', 'futures_margin'])
-            ->first();
+        try {
+            \Log::debug("Fetching account details for bot: $bot");
+            $account = DB::connection('central')
+                ->table('exchange_accounts')
+                ->where('bot_id', $bot)
+                ->select(['balance', 'available_margin', 'open_trades', 'updated_at', 'futures_balance', 'futures_margin'])
+                ->first();
 
-        \Log::debug("Account query result for $bot: " . json_encode($account));
+            \Log::debug("Account query result for $bot: " . json_encode($account));
 
-        if (!$account) {
-            \Log::warning("No account details found for $bot, returning default response");
-            return response()->json([
-                'balance' => 0.0,
-                'available_margin' => 0.0,
-                'open_trades' => 0,
-                'updated_at' => date('c'),
-                'futures_balance' => 0.0,
-                'futures_margin' => 0.0
-            ], 200, [], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+            if (!$account) {
+                \Log::warning("No account details found for $bot, returning default response");
+                return response()->json([
+                    'balance' => 0.0,
+                    'available_margin' => 0.0,
+                    'open_trades' => 0,
+                    'updated_at' => date('c'),
+                    'futures_balance' => 0.0,
+                    'futures_margin' => 0.0
+                ], 200, [], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+            }
+
+            return response()->json($account, 200, [], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+        } catch (\Exception $e) {
+            \Log::error("Error fetching account details for $bot: " . $e->getMessage());
+            return response()->json(['error' => 'Failed to fetch account details: ' . $e->getMessage()], 500);
         }
-
-        return response()->json($account, 200, [], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
-    } catch (\Exception $e) {
-        \Log::error("Error fetching account details for $bot: " . $e->getMessage());
-        return response()->json(['error' => 'Failed to fetch account details: ' . $e->getMessage()], 500);
     }
-}
-}
 }
