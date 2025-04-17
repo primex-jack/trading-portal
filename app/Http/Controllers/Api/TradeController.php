@@ -62,4 +62,31 @@ class TradeController extends Controller
             return response()->json(['error' => 'Failed to fetch active trades: ' . $e->getMessage()], 500);
         }
     }
+    public function accountDetails(Request $request, $bot)
+    {
+    try {
+        $account = DB::connection('central')
+            ->table('exchange_accounts')
+            ->where('bot_id', $bot)
+            ->select(['balance', 'available_margin', 'open_trades', 'updated_at', 'futures_balance', 'futures_margin'])
+            ->first();
+
+        if (!$account) {
+            // Return a default response instead of 404
+            return response()->json([
+                'balance' => 0.0,
+                'available_margin' => 0.0,
+                'open_trades' => 0,
+                'updated_at' => date('c'),
+                'futures_balance' => 0.0,
+                'futures_margin' => 0.0
+            ], 200, [], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+        }
+
+        return response()->json($account, 200, [], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+    } catch (\Exception $e) {
+        \Log::error("Error fetching account details for $bot: " . $e->getMessage());
+        return response()->json(['error' => 'Failed to fetch account details: ' . $e->getMessage()], 500);
+    }
+}
 }

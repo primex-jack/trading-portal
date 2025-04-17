@@ -1,68 +1,69 @@
 @extends('layouts.app')
 
 @section('content')
-    <h1 class="mb-4">Trading Overview</h1>
+    <div class="container">
+        <h1 class="mb-4">Trading Overview</h1>
 
-    <!-- Bot Accounts Section -->
-    <div class="row mb-4">
-        @foreach ($bots as $botId)
-            <div class="col-md-4 mb-4">
-                <div class="card shadow-sm border-0 h-100">
-                    <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
-                        <h5 class="card-title mb-0">{{ config('bots')[$botId]['name'] }}</h5>
-                        <span class="badge" id="bot-status-{{ $botId }}" style="font-size: 0.9rem;">Loading...</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-6">
-                                <p><strong>Trading Pair:</strong> <span id="trading-pair-{{ $botId }}">Loading...</span></p>
-                                <p><strong>Timeframe:</strong> <span id="timeframe-{{ $botId }}">Loading...</span></p>
-                                <p><strong>ATR Ratio:</strong> <span id="atr-ratio-{{ $botId }}">Loading...</span></p>
-                                <p><strong>ATR Period:</strong> <span id="atr-period-{{ $botId }}">Loading...</span></p>
-                            </div>
-                            <div class="col-6">
-                                <p><strong>Exchange:</strong> Binance</p>
-                                <p><strong>Balance:</strong> <span id="balance-{{ $botId }}">Loading...</span> USDT</p>
-                                <p><strong>Current Position:</strong> <span id="position-{{ $botId }}">Loading...</span></p>
+        <!-- Bot Accounts Section -->
+        <div class="row mb-4">
+            @foreach ($bots as $botId)
+                <div class="col-md-4 mb-4">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
+                            <h5 class="card-title mb-0">{{ config('bots')[$botId]['name'] }}</h5>
+                            <span class="badge" id="bot-status-{{ $botId }}" style="font-size: 0.9rem;">Loading...</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-6">
+                                    <p><strong>Trading Pair:</strong> <span id="trading-pair-{{ $botId }}">Loading...</span></p>
+                                    <p><strong>Timeframe:</strong> <span id="timeframe-{{ $botId }}">Loading...</span></p>
+                                    <p><strong>ATR Ratio:</strong> <span id="atr-ratio-{{ $botId }}">Loading...</span></p>
+                                    <p><strong>ATR Period:</strong> <span id="atr-period-{{ $botId }}">Loading...</span></p>
+                                </div>
+                                <div class="col-6">
+                                    <p><strong>Exchange:</strong> Binance</p>
+                                    <p><strong>Balance:</strong> <span id="balance-{{ $botId }}">Loading...</span> USDT</p>
+                                    <p><strong>Current Position:</strong> <span id="position-{{ $botId }}">Loading...</span></p>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        @endforeach
-    </div>
+            @endforeach
+        </div>
 
-    <!-- Active Trades Section -->
-    <div class="card mb-4">
-        <div class="card-header">Active Trades</div>
-        <div class="card-body">
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>Bot</th>
-                        <th>Trade Open</th>
-                        <th>Trading Pair</th>
-                        <th>Timeframe</th>
-                        <th>Side</th>
-                        <th>Entry Price</th>
-                        <th>Param</th>
-                        <th>Size</th>
-                        <th>Size $</th>
-                        <th>Stop Loss</th>
-                        <th>Profit/Loss (USDT)</th>
-                    </tr>
-                </thead>
-                <tbody id="overview-active-trades">
-                    <tr><td colspan="11">Loading...</td></tr>
-                </tbody>
-            </table>
+        <!-- Active Trades Section -->
+        <div class="card mb-4">
+            <div class="card-header">Active Trades</div>
+            <div class="card-body">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Bot</th>
+                            <th>Trade Open</th>
+                            <th>Trading Pair</th>
+                            <th>Timeframe</th>
+                            <th>Side</th>
+                            <th>Entry Price</th>
+                            <th>Param</th>
+                            <th>Size</th>
+                            <th>Size $</th>
+                            <th>Stop Loss</th>
+                            <th>Profit/Loss (USDT)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="overview-active-trades">
+                        <tr><td colspan="11">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 @endsection
 
 @push('scripts')
     <script>
-        // Existing JavaScript for Active Trades table (unchanged)
         function formatTimestamp(timestamp) {
             const date = new Date(timestamp);
             const day = String(date.getDate()).padStart(2, '0');
@@ -93,7 +94,6 @@
                 })
                 .then(data => {
                     botSettings[botId] = data.settings || {};
-                    // Update bot card details
                     const statusEl = document.getElementById(`bot-status-${botId}`);
                     statusEl.textContent = data.running ? 'Running' : 'Stopped';
                     statusEl.className = `badge ${data.running ? 'bg-success' : 'bg-danger'}`;
@@ -102,7 +102,9 @@
                     document.getElementById(`atr-ratio-${botId}`).textContent = data.settings.atr_ratio;
                     document.getElementById(`atr-period-${botId}`).textContent = data.settings.atr_period;
                 })
-                .catch(error => console.error(`Error fetching settings for ${botId}:`, error));
+                .catch(error => {
+                    console.error(`Error fetching settings for ${botId}:`, error);
+                });
         }
 
         function fetchBotPosition(botId) {
@@ -126,7 +128,9 @@
                         positionEl.textContent = 'No Position';
                     }
                 })
-                .catch(error => console.error(`Error fetching position for ${botId}:`, error));
+                .catch(error => {
+                    console.error(`Error fetching position for ${botId}:`, error);
+                });
         }
 
         function fetchBotBalance(botId) {
@@ -138,13 +142,18 @@
                 cache: 'no-store'
             })
                 .then(response => {
-                    if (!response.ok) throw new Error('Network response was not ok');
+                    if (!response.ok) {
+                        throw new Error(`Failed to fetch balance for ${botId}: ${response.status} ${response.statusText}`);
+                    }
                     return response.json();
                 })
                 .then(data => {
                     document.getElementById(`balance-${botId}`).textContent = data.futures_margin.toFixed(2);
                 })
-                .catch(error => console.error(`Error fetching balance for ${botId}:`, error));
+                .catch(error => {
+                    console.error(`Error fetching balance for ${botId}:`, error);
+                    document.getElementById(`balance-${botId}`).textContent = `Error: ${error.message}`;
+                });
         }
 
         function fetchOverviewActiveTrades() {
@@ -197,7 +206,6 @@
             });
         }
 
-        // Initial fetch and polling for bot cards
         document.addEventListener('DOMContentLoaded', () => {
             const bots = @json(array_keys(config('bots')));
             bots.forEach(botId => {
@@ -207,7 +215,6 @@
             });
             fetchOverviewActiveTrades();
 
-            // Polling for updates
             setInterval(() => {
                 bots.forEach(botId => {
                     fetchBotSettings(botId);
