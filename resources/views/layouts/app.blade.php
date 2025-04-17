@@ -8,8 +8,9 @@
         <title>Trading Portal</title>
 
         <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,600&display=swap" rel="stylesheet" />
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 
         <!-- Bootstrap CSS -->
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
@@ -20,37 +21,39 @@
         <!-- Styles -->
         <style>
             body {
-                font-family: 'Figtree', sans-serif;
+                font-family: 'Poppins', sans-serif;
                 font-size: 16px;
+                background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+                min-height: 100vh;
             }
             .navbar-custom {
-                background-color: #7088ad !important; /* Updated to #7088ad */
+                background-color: #7088ad !important;
             }
             .navbar-custom .navbar-brand,
             .navbar-custom .nav-link,
             .navbar-custom .dropdown-toggle {
-                color: white !important; /* White text */
+                color: white !important;
             }
             .navbar-custom .nav-link:hover,
             .navbar-custom .dropdown-toggle:hover {
-                color: #e0e0e0 !important; /* Slightly lighter white on hover */
+                color: #e0e0e0 !important;
             }
             .navbar-custom .dropdown-menu {
-                background-color: #7088ad; /* Match dropdown background */
+                background-color: #7088ad;
             }
             .navbar-custom .dropdown-item {
-                color: white !important; /* White text for dropdown items */
+                color: white !important;
             }
             .navbar-custom .dropdown-item:hover {
-                background-color: #5a6f8f; /* Slightly darker shade on hover */
+                background-color: #5a6f8f;
                 color: white !important;
             }
         </style>
     </head>
     <body class="antialiased">
-        <div class="relative sm:flex sm:justify-center sm:items-center min-h-screen bg-dots-darker bg-center bg-gray-100 dark:bg-dots-lighter dark:bg-gray-900 selection:bg-red-500 selection:text-white">
+        <div class="relative sm:flex sm:justify-center sm:items-center min-h-screen selection:bg-red-500 selection:text-white">
             <nav class="navbar navbar-expand-md navbar-custom shadow-sm">
-                <div class="container">
+                <div class="container-fluid">
                     <a class="navbar-brand" href="{{ url('/') }}">
                         Trading Portal
                     </a>
@@ -112,9 +115,7 @@
                 </div>
             </nav>
 
-            <div class="container">
-                @yield('content')
-            </div>
+            @yield('content')
         </div>
 
         @stack('scripts')

@@ -1,19 +1,19 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="custom-container">
-        <h1 class="mb-4">Trading Overview</h1>
+    <div class="container-fluid custom-container">
+        <h1 class="mb-4 mt-5 text-center heading-main">Trading Overview</h1>
 
         <!-- Bot Accounts Section -->
-        <div class="row mb-4">
+        <div class="row mb-5">
             @foreach ($bots as $botId)
                 <div class="col-md-4 mb-4">
-                    <div class="card shadow-sm border-0 h-100">
+                    <div class="card shadow-sm border-0 h-100 bot-card">
                         <div class="card-header d-flex justify-content-between align-items-center text-white">
                             <h5 class="card-title mb-0">{{ config('bots')[$botId]['name'] }}</h5>
                             <span class="badge" id="bot-status-{{ $botId }}" style="font-size: 0.9rem;">Loading...</span>
                         </div>
-                        <div class="card-body">
+                        <div class="card-body p-4">
                             <div class="row">
                                 <div class="col-6">
                                     <p><strong>Trading Pair:</strong> <span id="trading-pair-{{ $botId }}">Loading...</span></p>
@@ -40,7 +40,7 @@
         </div>
 
         <!-- Active Trades Section -->
-        <div class="card mb-4">
+        <div class="card mb-4 active-trades-card">
             <div class="card-header">Active Trades</div>
             <div class="card-body">
                 <table class="table table-bordered">
@@ -247,25 +247,32 @@
 
 <style>
     .custom-container {
-        max-width: 1600px; /* Wider container for large screens */
+        max-width: 1920px; /* Ensure max-width is applied */
         margin: 0 auto;
-        padding: 0 15px;
+        padding: 0 30px; /* Increased padding for better spacing */
+    }
+
+    .heading-main {
+        font-size: 2.5rem;
+        font-weight: 600;
+        color: #333;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
     }
 
     .card-header {
-        background-color: #7088ad; /* Ensure #7088ad is applied */
+        background: linear-gradient(135deg, #7088ad 0%, #5a6f8f 100%);
         color: white;
         font-weight: 500;
     }
 
-    .card {
-        border-radius: 10px;
-        transition: transform 0.2s;
+    .bot-card {
+        border-radius: 15px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
 
-    .card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2) !important;
+    .bot-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15) !important;
     }
 
     .badge.bg-success {
@@ -314,21 +321,49 @@
     .position-badge.bg-success {
         background-color: #28a745 !important;
         color: white;
+	padding: 10;
     }
 
     .position-badge.bg-danger {
         background-color: #dc3545 !important;
         color: white;
+	padding: 10;
     }
 
     .position-badge.bg-secondary {
         background-color: #6c757d !important;
         color: white;
+	padding: 10;
     }
 
     .position-details {
         text-align: center;
         font-size: 1rem;
         font-weight: 500;
+    }
+
+    .active-trades-card .card-header {
+        background: linear-gradient(135deg, #7088ad 0%, #5a6f8f 100%);
+        color: white;
+        font-weight: 500;
+    }
+
+    .table thead th {
+        background-color: #7088ad;
+        color: white;
+        border-bottom: 2px solid #5a6f8f;
+    }
+
+    .table tbody tr:nth-child(odd) {
+        background-color: #f8f9fa;
+    }
+
+    .table tbody tr:nth-child(even) {
+        background-color: #ffffff;
+    }
+
+    .table tbody tr:hover {
+        background-color: #e9ecef;
+        transition: background-color 0.3s ease;
     }
 </style>
