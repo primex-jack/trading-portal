@@ -18,7 +18,7 @@ use App\Http\Controllers\Api\BotController;
 Route::get('/', function () {
     $bots = array_keys(config('bots'));
     return view('overview', compact('bots'));
-});
+})->name('overview');
 
 Route::get('/dashboard/{bot}', function ($bot) {
     $bots = array_keys(config('bots'));
