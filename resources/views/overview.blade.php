@@ -43,7 +43,7 @@
         <div class="card mb-4 active-trades-card">
             <div class="card-header">Active Trades</div>
             <div class="card-body">
-                <table class="table table-bordered">
+                <table class="table table-modern">
                     <thead>
                         <tr>
                             <th>Bot</th>
@@ -136,7 +136,9 @@
                         const trade = data.data[0];
                         const side = trade.side;
                         const profitLoss = trade.profit_loss;
-                        positionEl.textContent = `${side} ${trade.trading_pair}`;
+                        const baseAsset = getBaseAsset(trade.trading_pair);
+                        const sizeUsd = trade.size * trade.entry_price;
+                        positionEl.textContent = `${side} ${Math.round(trade.size)}${baseAsset} ($${formatNumber(sizeUsd)})`;
                         positionEl.className = `badge position-badge ${side === 'SHORT' ? 'bg-danger' : 'bg-success'}`;
                         detailsEl.textContent = `Entry: ${formatNumber(trade.entry_price)} | P/L: ${formatNumber(profitLoss)}`;
                         detailsEl.className = profitLoss >= 0 ? 'profit-positive' : 'profit-negative';
@@ -203,19 +205,20 @@
                             const atrParam = settings.atr_period && settings.atr_ratio ? `${settings.atr_period}/${settings.atr_ratio}` : 'N/A';
                             const profitLossClass = trade.profit_loss >= 0 ? 'profit-positive' : 'profit-negative';
                             const sizeDollars = (trade.size * trade.entry_price).toFixed(2);
+                            const baseAsset = getBaseAsset(trade.trading_pair);
                             const row = `
                                 <tr>
                                     <td>${botId}</td>
                                     <td>${formatTimestamp(trade.timestamp)}</td>
-                                    <td>${getBaseAsset(trade.trading_pair)}</td>
+                                    <td>${baseAsset}</td>
                                     <td>${trade.timeframe}</td>
-                                    <td>${trade.side}</td>
-                                    <td>${formatNumber(trade.entry_price)}</td>
+                                    <td><span class="badge ${trade.side === 'SHORT' ? 'bg-danger' : 'bg-success'}">${trade.side}</span></td>
+                                    <td><span class="label">Entry:</span> ${formatNumber(trade.entry_price)}</td>
                                     <td>${atrParam}</td>
                                     <td>${Math.round(trade.size)}</td>
-                                    <td>${formatNumber(sizeDollars)}</td>
+                                    <td><span class="label">Size $:</span> ${formatNumber(sizeDollars)}</td>
                                     <td>${trade.stop_loss ? formatNumber(trade.stop_loss) : 'N/A'}</td>
-                                    <td class="${profitLossClass}">${formatNumber(trade.profit_loss)}</td>
+                                    <td class="${profitLossClass}"><span class="label">P/L:</span> ${formatNumber(trade.profit_loss)}</td>
                                 </tr>`;
                             tbody.innerHTML += row;
                         });
@@ -247,9 +250,9 @@
 
 <style>
     .custom-container {
-        max-width: 1920px; /* Ensure max-width is applied */
+        max-width: 1920px;
         margin: 0 auto;
-        padding: 0 30px; /* Increased padding for better spacing */
+        padding: 0 30px;
     }
 
     .heading-main {
@@ -321,22 +324,22 @@
     .position-badge.bg-success {
         background-color: #28a745 !important;
         color: white;
-	padding: 10;
-	font-size: 15px;
+	padding: 12px;
+    	font-size: 15px;
     }
 
     .position-badge.bg-danger {
         background-color: #dc3545 !important;
         color: white;
-	padding: 10;
-	font-size: 15px;
+        padding: 12px;
+        font-size: 15px;    
     }
 
     .position-badge.bg-secondary {
         background-color: #6c757d !important;
         color: white;
-	padding: 10;
-	font-size: 15px;
+        padding: 12px;
+        font-size: 15px;
     }
 
     .position-details {
@@ -351,22 +354,55 @@
         font-weight: 500;
     }
 
-    .table thead th {
-        background-color: #7088ad;
-        color: white;
-        border-bottom: 2px solid #5a6f8f;
+    .table-modern {
+        border-collapse: separate;
+        border-spacing: 0;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        border-radius: 10px;
+        overflow: hidden;
     }
 
-    .table tbody tr:nth-child(odd) {
+    .table-modern thead th {
+        background: linear-gradient(135deg, #7088ad 0%, #5a6f8f 100%);
+        color: white;
+        padding: 1rem;
+        text-align: center;
+        border: none;
+        font-weight: 600;
+    }
+
+    .table-modern tbody tr {
+        transition: background-color 0.3s ease;
+    }
+
+    .table-modern tbody tr:nth-child(odd) {
         background-color: #f8f9fa;
     }
 
-    .table tbody tr:nth-child(even) {
+    .table-modern tbody tr:nth-child(even) {
         background-color: #ffffff;
     }
 
-    .table tbody tr:hover {
+    .table-modern tbody tr:hover {
         background-color: #e9ecef;
-        transition: background-color 0.3s ease;
+    }
+
+    .table-modern tbody td {
+        padding: 1rem;
+        border: none;
+        vertical-align: middle;
+    }
+
+    .table-modern tbody td:nth-child(5), /* Side */
+    .table-modern tbody td:nth-child(7), /* Param */
+    .table-modern tbody td:nth-child(8)  /* Size */
+    {
+        text-align: center;
+    }
+
+    .table-modern .label {
+        font-weight: 500;
+        color: #555;
+        margin-right: 5px;
     }
 </style>
