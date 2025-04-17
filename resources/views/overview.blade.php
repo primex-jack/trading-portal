@@ -1,9 +1,38 @@
 @extends('layouts.app')
 
 @section('content')
-    <h1>Trading Overview</h1>
+    <h1 class="mb-4">Trading Overview</h1>
 
-    <!-- Active Trades -->
+    <!-- Bot Accounts Section -->
+    <div class="row mb-4">
+        @foreach ($bots as $botId)
+            <div class="col-md-4 mb-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
+                        <h5 class="card-title mb-0">{{ config('bots')[$botId]['name'] }}</h5>
+                        <span class="badge" id="bot-status-{{ $botId }}" style="font-size: 0.9rem;">Loading...</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-6">
+                                <p><strong>Trading Pair:</strong> <span id="trading-pair-{{ $botId }}">Loading...</span></p>
+                                <p><strong>Timeframe:</strong> <span id="timeframe-{{ $botId }}">Loading...</span></p>
+                                <p><strong>ATR Ratio:</strong> <span id="atr-ratio-{{ $botId }}">Loading...</span></p>
+                                <p><strong>ATR Period:</strong> <span id="atr-period-{{ $botId }}">Loading...</span></p>
+                            </div>
+                            <div class="col-6">
+                                <p><strong>Exchange:</strong> Binance</p>
+                                <p><strong>Balance:</strong> <span id="balance-{{ $botId }}">Loading...</span> USDT</p>
+                                <p><strong>Current Position:</strong> <span id="position-{{ $botId }}">Loading...</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endforeach
+    </div>
+
+    <!-- Active Trades Section -->
     <div class="card mb-4">
         <div class="card-header">Active Trades</div>
         <div class="card-body">
@@ -33,6 +62,7 @@
 
 @push('scripts')
     <script>
+        // Existing JavaScript for Active Trades table (unchanged)
         function formatTimestamp(timestamp) {
             const date = new Date(timestamp);
             const day = String(date.getDate()).padStart(2, '0');
@@ -47,7 +77,6 @@
             return tradingPair.replace(/USDT$/, '');
         }
 
-        // Fetch bot settings for ATR_PERIOD and ATR_RATIO
         const botSettings = {};
 
         function fetchBotSettings(botId) {
@@ -64,11 +93,60 @@
                 })
                 .then(data => {
                     botSettings[botId] = data.settings || {};
+                    // Update bot card details
+                    const statusEl = document.getElementById(`bot-status-${botId}`);
+                    statusEl.textContent = data.running ? 'Running' : 'Stopped';
+                    statusEl.className = `badge ${data.running ? 'bg-success' : 'bg-danger'}`;
+                    document.getElementById(`trading-pair-${botId}`).textContent = data.settings.trading_pair;
+                    document.getElementById(`timeframe-${botId}`).textContent = data.settings.timeframe;
+                    document.getElementById(`atr-ratio-${botId}`).textContent = data.settings.atr_ratio;
+                    document.getElementById(`atr-period-${botId}`).textContent = data.settings.atr_period;
                 })
                 .catch(error => console.error(`Error fetching settings for ${botId}:`, error));
         }
 
-        // Fetch active trades for all bots
+        function fetchBotPosition(botId) {
+            return fetch(`/api/${botId}/trades/active`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                cache: 'no-store'
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.json();
+                })
+                .then(data => {
+                    const positionEl = document.getElementById(`position-${botId}`);
+                    if (data.data && data.data.length > 0) {
+                        const trade = data.data[0];
+                        positionEl.textContent = `${trade.side} ${trade.trading_pair}`;
+                    } else {
+                        positionEl.textContent = 'No Position';
+                    }
+                })
+                .catch(error => console.error(`Error fetching position for ${botId}:`, error));
+        }
+
+        function fetchBotBalance(botId) {
+            return fetch(`/api/${botId}/account`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                cache: 'no-store'
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.json();
+                })
+                .then(data => {
+                    document.getElementById(`balance-${botId}`).textContent = data.futures_margin.toFixed(2);
+                })
+                .catch(error => console.error(`Error fetching balance for ${botId}:`, error));
+        }
+
         function fetchOverviewActiveTrades() {
             const bots = @json(array_keys(config('bots')));
             const promises = bots.map(bot => fetchBotSettings(bot));
@@ -119,14 +197,52 @@
             });
         }
 
-        // Initial fetch
+        // Initial fetch and polling for bot cards
         document.addEventListener('DOMContentLoaded', () => {
+            const bots = @json(array_keys(config('bots')));
+            bots.forEach(botId => {
+                fetchBotSettings(botId);
+                fetchBotPosition(botId);
+                fetchBotBalance(botId);
+            });
             fetchOverviewActiveTrades();
 
             // Polling for updates
             setInterval(() => {
+                bots.forEach(botId => {
+                    fetchBotSettings(botId);
+                    fetchBotPosition(botId);
+                    fetchBotBalance(botId);
+                });
                 fetchOverviewActiveTrades();
             }, 10000);
         });
     </script>
 @endpush
+
+<style>
+    .card-header {
+        background-color: #007bff;
+        color: white;
+        font-weight: 500;
+    }
+    .card {
+        border-radius: 10px;
+        transition: transform 0.2s;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2) !important;
+    }
+    .badge.bg-success {
+        background-color: #28a745 !important;
+    }
+    .badge.bg-danger {
+        background-color: #dc3545 !important;
+    }
+    p {
+        margin-bottom: 0.5rem;
+    }
+    .profit-positive { color: green; }
+    .profit-negative { color: red; }
+</style>
