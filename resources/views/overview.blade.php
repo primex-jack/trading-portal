@@ -322,18 +322,21 @@
         background-color: #28a745 !important;
         color: white;
 	padding: 10;
+	font-size: 15px;
     }
 
     .position-badge.bg-danger {
         background-color: #dc3545 !important;
         color: white;
 	padding: 10;
+	font-size: 15px;
     }
 
     .position-badge.bg-secondary {
         background-color: #6c757d !important;
         color: white;
 	padding: 10;
+	font-size: 15px;
     }
 
     .position-details {
