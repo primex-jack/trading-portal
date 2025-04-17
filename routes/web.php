@@ -15,6 +15,9 @@ use App\Http\Controllers\Api\BotController;
 |
 */
 
+// Authentication Routes
+Auth::routes();
+
 Route::get('/', function () {
     $bots = array_keys(config('bots'));
     return view('overview', compact('bots'));
