@@ -9,7 +9,7 @@
             @foreach ($bots as $botId)
                 <div class="col-md-4 mb-4">
                     <div class="card shadow-sm border-0 h-100">
-                        <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
+                        <div class="card-header d-flex justify-content-between align-items-center text-white">
                             <h5 class="card-title mb-0">{{ config('bots')[$botId]['name'] }}</h5>
                             <span class="badge" id="bot-status-{{ $botId }}" style="font-size: 0.9rem;">Loading...</span>
                         </div>
@@ -253,7 +253,7 @@
     }
 
     .card-header {
-        background-color: #7c92b3;
+        background-color: #7088ad; /* Updated to #7088ad */
         color: white;
         font-weight: 500;
     }
